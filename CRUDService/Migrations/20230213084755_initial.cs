@@ -18,7 +18,8 @@ namespace CRUDService.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Age = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<int>(type: "int", nullable: false)
+                    IsActive = table.Column<int>(type: "int", nullable: false),
+                    PathImage = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

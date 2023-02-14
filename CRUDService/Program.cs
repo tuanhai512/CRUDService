@@ -1,6 +1,7 @@
 using CRUDService.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<EmployeeContext>(opts =>
@@ -13,7 +14,7 @@ builder.Services.AddCors();
 
 var app = builder.Build();
 
-if(app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI( c => c.SwaggerEndpoint("/swagger/v1/swagger.js","Test api 1"));
@@ -25,6 +26,8 @@ app.UseCors(builder =>
     .AllowAnyMethod()
     .AllowAnyHeader();
 });
+
+app.UseStaticFiles();
 
 app.MapControllers();
 

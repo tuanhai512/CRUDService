@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
+
 namespace CRUDService.Controllers
 {
     [Route("api/[controller]")]
@@ -10,9 +12,12 @@ namespace CRUDService.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly EmployeeContext _employeeContext;
-        public EmployeeController(EmployeeContext employeeContext)
+        private readonly IHostingEnvironment _hostingEnvironment;
+
+        public EmployeeController(EmployeeContext employeeContext, IHostingEnvironment hostingEnvironment)
         {
             _employeeContext = employeeContext;
+            _hostingEnvironment = hostingEnvironment;
         }
 
         [HttpGet]
@@ -39,11 +44,17 @@ namespace CRUDService.Controllers
         }
 
         [HttpPost()]
-        public async Task<ActionResult<Employee>> PostEmployee(Employee employee)
+        public async Task<ActionResult<Employee>> PostEmployee([FromQuery]Employee employee,IFormFile img)
         {
+            
+            var path = Path.Combine(_hostingEnvironment.WebRootPath, "images", img.FileName);
+            var streamImage = new FileStream(path,
+                                             FileMode.Append);
+            img.CopyTo(streamImage);
+            employee.PathImage = path ;
             _employeeContext.Employees.Add(employee);
             await _employeeContext.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetEmployee),new {id = employee.ID},employee);
+            return CreatedAtAction(nameof(GetEmployee),new {id = employee.ID },employee);
         }
 
         [HttpPut("{id}")]
