@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CRUDService.Migrations
 {
     [DbContext(typeof(EmployeeContext))]
-    [Migration("20230213084755_initial")]
+    [Migration("20230215041644_initial")]
     partial class initial
     {
         /// <inheritdoc />
@@ -35,13 +35,14 @@ namespace CRUDService.Migrations
                     b.Property<string>("Age")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("IsActive")
                         .HasColumnType("int");
 
                     b.Property<string>("Name")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PathImage")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("ID");

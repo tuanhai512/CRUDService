@@ -12,12 +12,12 @@ namespace CRUDService.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly EmployeeContext _employeeContext;
-        private readonly IHostingEnvironment _hostingEnvironment;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public EmployeeController(EmployeeContext employeeContext, IHostingEnvironment hostingEnvironment)
+        public EmployeeController(EmployeeContext employeeContext, IWebHostEnvironment webHostEnvironment)
         {
             _employeeContext = employeeContext;
-            _hostingEnvironment = hostingEnvironment;
+            this._webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
@@ -27,7 +27,15 @@ namespace CRUDService.Controllers
             {
                 return NotFound();
             }
-            return await _employeeContext.Employees.ToListAsync();
+            return await _employeeContext.Employees.Select(x => new Employee()
+            {
+                ID = x.ID,
+                Name = x.Name,
+                Age = x.Age,
+                ImageName = x.ImageName,
+                IsActive = x.IsActive,
+                ImageSrc = String.Format("{0}://{1}{2}/images/{3}",Request.Scheme,Request.Host,Request.PathBase,x.ImageName)
+            }).ToListAsync();
         }
 
         [HttpGet("{id}")]
@@ -37,32 +45,38 @@ namespace CRUDService.Controllers
             {
                 return NotFound();
             }
+
             var employee = await _employeeContext.Employees.FindAsync(id);
+
             if(employee == null)
             { return NotFound(); }
             return employee;
         }
 
-        [HttpPost()]
-        public async Task<ActionResult<Employee>> PostEmployee([FromQuery]Employee employee,IFormFile img)
+        [HttpPost]
+        public async Task<ActionResult<Employee>> PostEmployee([FromForm] Employee employee)
         {
-            
-            var path = Path.Combine(_hostingEnvironment.WebRootPath, "images", img.FileName);
-            var streamImage = new FileStream(path,
-                                             FileMode.Append);
-            img.CopyTo(streamImage);
-            employee.PathImage = path ;
+            if (!ModelState.IsValid)
+            {
+                return UnprocessableEntity(ModelState);
+            }
+            employee.ImageName = await SaveImage(employee.ImageFile);
             _employeeContext.Employees.Add(employee);
             await _employeeContext.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetEmployee),new {id = employee.ID },employee);
+            return StatusCode(201);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<Employee>> PutEmpoyee(int id ,Employee employee)
+        public async Task<ActionResult<Employee>> PutEmpoyee(int id , [FromForm] Employee employee)
         {
             if(id != employee.ID)
             {
                 return BadRequest();
+            }
+            if(employee.ImageName != null)
+            {
+                DeleteImage(employee.ImageName);
+                employee.ImageName = await SaveImage(employee.ImageFile);   
             }
             _employeeContext.Entry(employee).State = EntityState.Modified;
             try
@@ -91,6 +105,30 @@ namespace CRUDService.Controllers
             _employeeContext.Remove(employee);
             await _employeeContext.SaveChangesAsync();
             return Ok();
+        }
+
+        [NonAction]
+        public async Task<string> SaveImage(IFormFile imageFile)
+        {
+            string imageName = new String(Path.GetFileNameWithoutExtension(imageFile.FileName));
+            imageName =imageName+ Path.GetExtension(imageFile.FileName);
+            var imagePath = Path.Combine(_webHostEnvironment.ContentRootPath,"images",imageName);
+            using (var fileStream = new FileStream(imagePath, FileMode.Create))
+            {
+               await imageFile.CopyToAsync(fileStream);
+            }
+            return imageName;
+        }
+
+        [NonAction]
+        public void DeleteImage(string imageName)
+        {
+            var imagePath = Path.Combine(_webHostEnvironment.ContentRootPath, "images", imageName);
+            if (System.IO.File.Exists(imagePath))
+            {
+                System
+                    .IO.File.Delete(imagePath);
+            }
         }
     }
 }

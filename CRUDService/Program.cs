@@ -9,7 +9,8 @@ opts.UseSqlServer(builder.Configuration.GetConnectionString("CRUDS")));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddControllers();
+builder.Services.AddControllers(
+    options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 builder.Services.AddCors();
 
 var app = builder.Build();
@@ -26,6 +27,13 @@ app.UseCors(builder =>
     .AllowAnyMethod()
     .AllowAnyHeader();
 });
+
+app.UseFileServer(new FileServerOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "images")),
+    RequestPath = "/images",
+    EnableDefaultFiles = true
+}) ;
 
 app.UseStaticFiles();
 
